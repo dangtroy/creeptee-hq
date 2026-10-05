@@ -3,7 +3,7 @@ import { getMeta } from "@/lib/meta";
 import { getPrintify } from "@/lib/printify";
 import { getShopify } from "@/lib/shopify";
 import { getTikTok } from "@/lib/tiktok";
-import { Delta, SalesChart, SourceGate, pretty, usd } from "./components";
+import { Brand, Delta, SalesChart, SourceGate, pretty, usd } from "./components";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ days?: string; fresh?: string }> }) {
   const sp = await searchParams;
@@ -19,6 +19,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
   // Top-line numbers
   const s = shop.state === "ok" ? shop.data : null;
+  const today = s?.days[s.days.length - 1];
   const rev = s ? s.days.reduce((a, d) => a + d.sales, 0) : 0;
   const prevRev = s ? s.prev.reduce((a, d) => a + d.sales, 0) : 0;
   const ord = s ? s.days.reduce((a, d) => a + d.orders, 0) : 0;
@@ -38,11 +39,24 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   ];
 
   return (
+    <>
+    {s && (
+      <div className="ann" role="status">
+        <span>
+          Today <b>{usd(today?.sales ?? 0)}</b> · {today?.orders ?? 0} orders
+        </span>
+        {s.topProducts[0] && (
+          <span>
+            Top seller, last {days} days: <b>{s.topProducts[0].title}</b>
+          </span>
+        )}
+      </div>
+    )}
     <div className="wrap">
       <header className="top">
         <div className="brand">
-          <h1>
-            CREEPTEE <b>HQ</b>
+          <h1 style={{ display: "contents" }}>
+            <Brand />
           </h1>
           <span className="sub">Updated {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: process.env.STORE_TIMEZONE || "America/Los_Angeles" })}</span>
         </div>
@@ -111,7 +125,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                 <>
                   <div className="legend">
                     <span>
-                      <i style={{ background: "var(--accent)" }} />
+                      <i style={{ background: "var(--blood-hi)" }} />
                       This period
                     </span>
                     <span>
@@ -214,7 +228,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                       ))}
                     </div>
                   ) : (
-                    <p className="note">No sales in this period.</p>
+                    <p className="note">Quiet in the crypt. No sales in this period.</p>
                   );
                 }}
               </SourceGate>
@@ -341,5 +355,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         </aside>
       </div>
     </div>
+    </>
   );
 }

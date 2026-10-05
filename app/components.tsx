@@ -1,6 +1,16 @@
 import type { Source } from "@/lib/core";
 
-export const usd = (v: number, dp = 0) =>
+export function Brand() {
+  return (
+    <div className="brand">
+      {/* eslint-disable-next-line @next/next/no-img-element -- the store's own logo, served from Shopify's CDN */}
+      <img src="https://creeptee.com/cdn/shop/files/logo.png?height=72" alt="CREEPTEE" width={177} height={30} />
+      <span className="hq">HQ</span>
+    </div>
+  );
+}
+
+export const usd =(v: number, dp = 0) =>
   "$" + v.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
 export const pretty = (s: string) => s.replace(/_/g, " ").toLowerCase();
@@ -65,10 +75,10 @@ export function SalesChart({ cur, prev }: { cur: { day: string; sales: number; o
       ))}
       {prev.length === cur.length && <path d={path(prev)} fill="none" stroke="var(--prev)" strokeWidth="1.5" strokeDasharray="4 4" />}
       {cur.length > 0 && (
-        <path d={`${path(cur)} L${x(cur.length - 1)} ${y(0)} L${x(0)} ${y(0)} Z`} fill="var(--accent)" fillOpacity=".12" />
+        <path d={`${path(cur)} L${x(cur.length - 1)} ${y(0)} L${x(0)} ${y(0)} Z`} fill="var(--blood-hi)" fillOpacity=".12" />
       )}
-      <path d={path(cur)} fill="none" stroke="var(--accent)" strokeWidth="2.25" strokeLinejoin="round" />
-      {last && <circle cx={x(cur.length - 1)} cy={y(last.sales)} r="4" fill="var(--accent)" />}
+      <path d={path(cur)} fill="none" stroke="var(--blood-hi)" strokeWidth="2.25" strokeLinejoin="round" />
+      {last && <circle cx={x(cur.length - 1)} cy={y(last.sales)} r="4" fill="var(--blood-hi)" />}
       {cur.map((p, i) => (
         <circle key={p.day} cx={x(i)} cy={y(p.sales)} r="8" fill="transparent">
           <title>{`${label(p.day)}: ${usd(p.sales, 2)} · ${p.orders} orders`}</title>

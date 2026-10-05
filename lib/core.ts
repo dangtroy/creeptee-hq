@@ -15,7 +15,10 @@ export async function run<T>(required: string[], fn: () => Promise<T>): Promise<
   try {
     return { state: "ok", data: await fn() };
   } catch (e) {
-    return { state: "error", message: e instanceof Error ? e.message : String(e) };
+    const message = e instanceof Error ? e.message : String(e);
+    // Also log it, so failures show up in Vercel → Logs, not only on the page.
+    console.error(`[source error] ${message}`);
+    return { state: "error", message };
   }
 }
 

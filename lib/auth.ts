@@ -2,8 +2,9 @@
 // so changing the password signs out every device.
 export const COOKIE = "hq_session";
 
+// Trimmed so a stray space or newline pasted into Vercel or the login box doesn't lock you out.
 export async function hashPassword(pw: string): Promise<string> {
-  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`creeptee-hq:${pw}`));
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`creeptee-hq:${pw.trim()}`));
   return Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 

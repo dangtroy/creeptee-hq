@@ -51,7 +51,9 @@ export async function printifyTemplate(): Promise<PrintifyTemplate> {
     // Prefer the variants carrying CREEP- SKUs (some catalog products show them as disabled), else the enabled ones.
     .filter((v: any, _i: number, all: any[]) => (all.some((x) => /^CREEP-/.test(x.sku || "")) ? /^CREEP-/.test(v.sku || "") : v.is_enabled))
     .map((v: any) => {
-      const raw = String(v.title || "").split("/").pop()!.trim().toUpperCase();
+      // Titles look like "S / Black" or "Black / S"; take whichever part is a size.
+      const parts = String(v.title || "").split("/").map((p: string) => p.trim().toUpperCase());
+      const raw = parts.find((p: string) => p in SIZE_MAP) || parts[0];
       return { id: v.id, size: SIZE_MAP[raw] || raw };
     });
   if (!variants.length) throw new Error(`Printify: "${product.title}" has no enabled variants to copy`);

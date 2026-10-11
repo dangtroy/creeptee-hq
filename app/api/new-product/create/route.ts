@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     const warnings: string[] = [];
     if (product.note) warnings.push(product.note);
-    if (p.skuMismatches.length) warnings.push(`Printify kept its own SKUs on: ${p.skuMismatches.join(", ")}. Set them to the CREEP- SKUs in Printify (Save as draft, don't publish) or orders won't import.`);
+    if (p.skuMismatches.length) warnings.push(`Printify didn't take the CREEP- SKUs through its API. Open the Printify product → Pricing → SKU → Edit, set each size to CREEP-${design}-TEE-BLK-[SIZE], then Save as draft (don't publish), or orders won't import.`);
 
     return Response.json({
       ok: true,

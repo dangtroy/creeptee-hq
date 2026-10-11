@@ -217,3 +217,47 @@ export function adminUrl(gid: string): string {
   const store = (process.env.SHOPIFY_STORE_DOMAIN || "").replace(".myshopify.com", "");
   return `https://admin.shopify.com/store/${store}/products/${gid.split("/").pop()}`;
 }
+
+// ---------- for the ads action ----------
+
+export type ProductPick = { id: string; title: string; handle: string; status: string; description: string; image: string | null; createdAt: string };
+
+export async function recentProducts(): Promise<ProductPick[]> {
+  const d = await gql(
+    `query { products(first: 30, query: "sku:CREEP-*", sortKey: CREATED_AT, reverse: true) {
+      nodes { id title handle status description createdAt featuredMedia { preview { image { url } } } }
+    } }`,
+    {},
+  );
+  return d.products.nodes.map((p: any) => ({
+    id: p.id,
+    title: p.title,
+    handle: p.handle,
+    status: p.status,
+    description: p.description,
+    image: p.featuredMedia?.preview?.image?.url || null,
+    createdAt: p.createdAt,
+  }));
+}
+
+export async function productById(id: string): Promise<ProductPick> {
+  const d = await gql(
+    `query($id: ID!) { product(id: $id) { id title handle status description createdAt featuredMedia { preview { image { url } } } } }`,
+    { id },
+  );
+  const p = d.product;
+  if (!p) throw new Error("Shopify: product not found");
+  return { id: p.id, title: p.title, handle: p.handle, status: p.status, description: p.description, image: p.featuredMedia?.preview?.image?.url || null, createdAt: p.createdAt };
+}
+
+/** The print file the New Product action saved to Shopify Files ("<Title> – print file"), if there is one. */
+export async function findPrintFile(title: string): Promise<string | null> {
+  const d = await gql(
+    `query($q: String!) { files(first: 10, query: $q, sortKey: CREATED_AT, reverse: true) { nodes { alt ... on MediaImage { image { url } } } } }`,
+    { q: `alt:"${title.replace(/"/g, "")} – print file"` },
+  );
+  const hit = d.files.nodes.find((f: any) => f.alt === `${title} – print file` && f.image?.url);
+  return hit?.image?.url || null;
+}
+
+export const storeUrl = () => process.env.STORE_URL || "https://creeptee.com";

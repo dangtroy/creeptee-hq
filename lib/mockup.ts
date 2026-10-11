@@ -29,8 +29,15 @@ export async function preview(img: Buffer, width = 640): Promise<Buffer> {
   return sharp(img).resize({ width }).flatten({ background: "#1b1a18" }).jpeg({ quality: 82 }).toBuffer();
 }
 
-/** Builds the product mockup from already-trimmed art (see trimArt). */
-export async function buildMockup(trimmed: Buffer): Promise<Buffer> {
+/** Story/Reels height: same 2000px width at 9:16. */
+export const STORY_H = Math.round((W * 16) / 9);
+
+/**
+ * Builds the product mockup from already-trimmed art (see trimArt). `canvasH` makes a taller canvas
+ * (e.g. STORY_H for 9:16 ads) with the same shirt, centered, and the backdrop filling the extra space.
+ */
+export async function buildMockup(trimmed: Buffer, canvasH = H): Promise<Buffer> {
+  const dy = Math.round((canvasH - H) / 2);
   const meta = await sharp(trimmed).metadata();
   const aw = meta.width || 1;
   const ah = meta.height || 1;
@@ -40,20 +47,20 @@ export async function buildMockup(trimmed: Buffer): Promise<Buffer> {
   const ph = Math.round(ah * scale);
   const printed = await sharp(trimmed).resize(pw, ph, { kernel: "lanczos3" }).png().toBuffer();
 
-  const backdrop = await buildBackdrop(trimmed, Math.round(pw * BG_ART_SCALE));
+  const backdrop = await buildBackdrop(trimmed, Math.round(pw * BG_ART_SCALE), canvasH);
   const shirt = await readFile(SHIRT);
 
-  return sharp(backdrop, { raw: { width: W, height: H, channels: 3 } })
+  return sharp(backdrop, { raw: { width: W, height: canvasH, channels: 3 } })
     .composite([
-      { input: shirt, left: 0, top: 0 },
-      { input: printed, left: Math.round(PRINT.centerX - pw / 2), top: PRINT.top },
+      { input: shirt, left: 0, top: dy },
+      { input: printed, left: Math.round(PRINT.centerX - pw / 2), top: PRINT.top + dy },
     ])
     .png({ compressionLevel: 9 })
     .toBuffer();
 }
 
 // Charcoal canvas with the art enlarged, centered, and pushed down to a dim warm grey.
-async function buildBackdrop(art: Buffer, width: number): Promise<Buffer> {
+async function buildBackdrop(art: Buffer, width: number, H: number): Promise<Buffer> {
   const { data, info } = await sharp(art).resize({ width, kernel: "lanczos3" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const out = Buffer.alloc(W * H * 3);
   const ox = Math.round((W - info.width) / 2);
@@ -78,4 +85,32 @@ async function buildBackdrop(art: Buffer, width: number): Promise<Buffer> {
     }
   }
   return out;
+}
+
+/**
+ * 9:16 version of an existing 4:5 product image when there's no print file to rebuild from:
+ * the image sits centered, untouched, on a blurred and darkened copy of itself.
+ */
+export async function storyFromImage(img: Buffer): Promise<Buffer> {
+  const inner = await sharp(img).resize({ width: W, height: H, fit: "cover" }).png().toBuffer();
+  const bg = await sharp(img).resize({ width: W, height: STORY_H, fit: "cover" }).blur(40).modulate({ brightness: 0.45 }).png().toBuffer();
+  return sharp(bg).composite([{ input: inner, left: 0, top: Math.round((STORY_H - H) / 2) }]).png().toBuffer();
+}
+
+/** Both ad sizes for a product: rebuilt from the print file when we have it, else from the product image. */
+export async function adImages(opts: { printFileUrl: string | null; productImageUrl: string | null }): Promise<{ feed: Buffer; story: Buffer; source: "print file" | "product image" }> {
+  const fetchBuf = async (u: string) => {
+    const r = await fetch(u);
+    if (!r.ok) throw new Error(`Couldn't download ${u.split("?")[0].split("/").pop()} (${r.status})`);
+    return Buffer.from(await r.arrayBuffer());
+  };
+  if (opts.printFileUrl) {
+    const art = await trimArt(await fetchBuf(opts.printFileUrl));
+    const [feed, story] = await Promise.all([buildMockup(art.png), buildMockup(art.png, STORY_H)]);
+    return { feed, story, source: "print file" };
+  }
+  if (!opts.productImageUrl) throw new Error("This product has no image and no saved print file to build ads from.");
+  const img = await fetchBuf(opts.productImageUrl);
+  const feed = await sharp(img).resize({ width: W, height: H, fit: "cover" }).png().toBuffer();
+  return { feed, story: await storyFromImage(img), source: "product image" };
 }

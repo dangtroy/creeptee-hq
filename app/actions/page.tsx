@@ -6,8 +6,7 @@ export const metadata = { title: "Actions · CREEPTEE HQ" };
 // Every automation lives here. Each one stops for your approval before it spends money or messages anyone.
 const ACTIONS: { name: string; blurb: string; href?: string }[] = [
   { name: "New product", blurb: "Art in → mockup, copy, Printify product and Shopify draft.", href: "/actions/new-product" },
-  { name: "Drop fan-out", blurb: "Collection, email/SMS, IG post, ManyChat keyword and paused ads for a new drop." },
-  { name: "Ads from new products", blurb: "Paused Meta and TikTok ads built from a new product's creative." },
+  { name: "Ads for a product", blurb: "Pick a product → 4:5 + 9:16 ad images and paused Meta ads in your New Drop ad sets.", href: "/actions/new-ads" },
   { name: "Ad check", blurb: "Daily read on Meta and TikTok with pause, scale and refresh calls." },
   { name: "Ad research", blurb: "Top category ads from Meta Ad Library, turned into creative tests." },
   { name: "Creator outreach", blurb: "Daily Trybe messages, drafted for approval." },

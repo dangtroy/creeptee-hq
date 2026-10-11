@@ -21,6 +21,12 @@ Private dashboard for CREEPTEE: Shopify sales, Meta and TikTok ad performance, a
 
 It refuses to create a second product with the same handle or design SKU unless you tick "Create anyway".
 
+### Ads for a product (`/actions/new-ads`)
+
+Pick a product, review the 4:5 (feed) and 9:16 (Stories/Reels) images and the copy, tick ad sets (New Drop "Scenes" sets are pre-ticked), and it creates one **PAUSED** placement-optimized ad (`_PLC`) per ad set. Images are rebuilt from the product's saved print file when there is one, otherwise from the product image. If Meta refuses the placement setup, it falls back to a single 4:5 image ad and says so.
+
+Needs `META_ACCESS_TOKEN` with `ads_management` (the dashboard only needs `ads_read`), the ad account in `META_AD_ACCOUNT_IDS` (first one is used), and optionally `META_PAGE_ID` (defaults to the CREEPTEE Page).
+
 ## Environment variables
 
 See `.env.example` for the full list. A platform with missing variables shows a "not connected" note naming exactly what to add.
@@ -29,7 +35,7 @@ See `.env.example` for the full list. A platform with missing variables shows a 
 | --- | --- | --- |
 | Login | `APP_PASSWORD` | Make one up. Long and unique. |
 | Shopify | `SHOPIFY_STORE_DOMAIN` + either `SHOPIFY_ACCESS_TOKEN`, or `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` | Shopify admin → Settings → Apps → Develop apps (or the Dev Dashboard). Scopes: `read_orders`, `read_products`; for Actions also `write_products`, `write_files`, `read_files`, `write_inventory`, `read_inventory`, `read_locations`. |
-| Meta Ads | `META_ACCESS_TOKEN`, `META_AD_ACCOUNT_IDS` | Business Settings → Users → System users → Generate token with `ads_read`, and assign the ad accounts to that system user. |
+| Meta Ads | `META_ACCESS_TOKEN`, `META_AD_ACCOUNT_IDS`, optional `META_PAGE_ID` | Business Settings → Users → System users → Generate token with `ads_read` and `ads_management` (plus `business_management`, `pages_show_list`, `pages_read_engagement`), and assign the ad account and the CREEPTEE Page to that system user. |
 | Printify | `PRINTIFY_API_TOKEN` | Printify → Account → Connections → Generate token. |
 | Copywriter (optional) | `ANTHROPIC_API_KEY`, optional `ANTHROPIC_MODEL` | console.anthropic.com → API keys. Without it, New Product starts with blank copy. |
 | TikTok Ads | `TIKTOK_ACCESS_TOKEN`, `TIKTOK_ADVERTISER_IDS` | business-api.tiktok.com → create a developer app with Reporting permission, then authorize your ad accounts. |

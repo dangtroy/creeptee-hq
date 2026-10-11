@@ -22,7 +22,7 @@ async function token(): Promise<string> {
   return tokenCache.token;
 }
 
-async function gql(query: string, variables: Record<string, unknown>) {
+export async function gql(query: string, variables: Record<string, unknown>) {
   const r = await getJson(
     `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${VERSION}/graphql.json`,
     {

@@ -68,6 +68,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               </a>
             ))}
           </nav>
+          <a className="btn primary" href="/actions">
+            Actions
+          </a>
           <a className="btn" href={`/?days=${days}&fresh=1`}>
             Refresh
           </a>

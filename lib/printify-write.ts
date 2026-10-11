@@ -43,12 +43,13 @@ export async function printifyTemplate(): Promise<PrintifyTemplate> {
   } else {
     const pages = await pf(`/shops/${shop}/products.json?limit=20&page=1`);
     const list: any[] = pages.data || [];
-    product = list.find((p) => p.variants?.some((v: any) => v.is_enabled && /^CREEP-/.test(v.sku || ""))) || list[0];
+    product = list.find((p) => p.variants?.some((v: any) => /^CREEP-/.test(v.sku || ""))) || list[0];
   }
   if (!product) throw new Error("Printify: no existing product to copy settings from. Set PRINTIFY_TEMPLATE_PRODUCT_ID.");
 
   const variants = (product.variants || [])
-    .filter((v: any) => v.is_enabled)
+    // Prefer the variants carrying CREEP- SKUs (some catalog products show them as disabled), else the enabled ones.
+    .filter((v: any, _i: number, all: any[]) => (all.some((x) => /^CREEP-/.test(x.sku || "")) ? /^CREEP-/.test(v.sku || "") : v.is_enabled))
     .map((v: any) => {
       const raw = String(v.title || "").split("/").pop()!.trim().toUpperCase();
       return { id: v.id, size: SIZE_MAP[raw] || raw };

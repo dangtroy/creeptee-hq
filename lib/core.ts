@@ -43,7 +43,9 @@ export async function getJson(url: string, init: RequestInit, label: string): Pr
     /* non-JSON error page */
   }
   if (!res.ok) {
-    const detail = body?.error?.message || body?.errors?.[0]?.message || body?.message || body?.errors || text.slice(0, 200);
+    let detail = body?.error?.message || body?.errors?.[0]?.message || body?.message || body?.errors || text.slice(0, 200);
+    // Printify puts the real reason in an `errors` object next to a generic "Validation failed." message.
+    if (typeof detail === "string" && body?.errors && !Array.isArray(body.errors)) detail += " " + JSON.stringify(body.errors).slice(0, 400);
     throw new Error(`${label} ${res.status}: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
   }
   return body;

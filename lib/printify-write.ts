@@ -97,7 +97,8 @@ export async function createProduct(opts: {
   if (hAt(scale) > maxH) scale = (maxH / hAt(scale)) * scale;
   const y = t.placement.topFrac + hAt(scale) / 2 / t.area.height;
 
-  const variants = t.variants.map((v) => ({ id: v.id, price: 2900, is_enabled: true, sku: opts.skuFor(v.size) }));
+  const variants = t.variants.map((v) => ({ id: v.id, price: 2900, is_enabled: true }));
+  const skus = new Map(t.variants.map((v) => [v.id, opts.skuFor(v.size)]));
   const body = {
     title: opts.title,
     description: opts.description,
@@ -111,14 +112,27 @@ export async function createProduct(opts: {
       },
     ],
   };
-  const created = await pf(`/shops/${t.shopId}/products.json`, { method: "POST", body: JSON.stringify(body) });
+  let created: any;
+  try {
+    created = await pf(`/shops/${t.shopId}/products.json`, { method: "POST", body: JSON.stringify(body) });
+  } catch (e) {
+    console.error(`[printify create] ${e instanceof Error ? e.message : e} :: ${JSON.stringify({ ...body, print_areas: body.print_areas.map((a) => ({ ...a, variant_ids: a.variant_ids.length })) })}`);
+    throw e;
+  }
 
-  // Make sure the variant SKUs are the CREEP- ones, so Shopify orders route to this product.
-  const want = new Map(variants.map((v) => [v.id, v.sku]));
+  // Then set the CREEP- SKUs, so Shopify orders route to this product. A failure here doesn't undo the product.
+  const want = skus;
   let off = (created.variants || []).filter((v: any) => want.has(v.id) && v.sku !== want.get(v.id));
   if (off.length) {
-    const updated = await pf(`/shops/${t.shopId}/products/${created.id}.json`, { method: "PUT", body: JSON.stringify({ variants }) });
-    off = (updated.variants || []).filter((v: any) => want.has(v.id) && v.sku !== want.get(v.id));
+    try {
+      const updated = await pf(`/shops/${t.shopId}/products/${created.id}.json`, {
+        method: "PUT",
+        body: JSON.stringify({ variants: variants.map((v) => ({ ...v, sku: want.get(v.id) })) }),
+      });
+      off = (updated.variants || []).filter((v: any) => want.has(v.id) && v.sku !== want.get(v.id));
+    } catch (e) {
+      console.error(`[printify sku] ${e instanceof Error ? e.message : e}`);
+    }
   }
   return { id: created.id, skuMismatches: off.map((v: any) => `${v.title}: ${v.sku}`) };
 }
